@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PyGMT: 地球科學繪圖的藝術</title>
+    <style>
+        /* --- 1. 核心變數與重置 (Design Tokens) --- */
+        :root {
+            --bg-deep: #0f172a;
+            --bg-surface: #1e293b;
+            --primary: #38bdf8; /* Ocean Blue */
+            --accent: #f472b6;  /* Magma Pink */
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+            --code-bg: #0d1117;
+            --font-display: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            --font-mono: 'Fira Code', 'Consolas', monospace;
+            --card-radius: 16px;
+        }
+
+        /* 主題切換變數 (Interactive) */
+        body.theme-magma {
+            --primary: #fbbf24; /* Amber */
+            --accent: #a855f7;  /* Purple */
+            --bg-deep: #1a0b2e;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        
+        body {
+            background-color: var(--bg-deep);
+            color: var(--text-main);
+            font-family: var(--font-display);
+            line-height: 1.6;
+            overflow-x: hidden;
+            transition: background-color 0.5s ease;
+        }
+
+        /* --- 2. 動態等高線背景 (Background Animation) --- */
+        .contour-bg {
+            position: fixed;
+            top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            opacity: 0.1;
+            background-image: 
+                radial-gradient(circle at 10% 20%, transparent 10%, var(--primary) 11%, transparent 12%),
+                radial-gradient(circle at 90% 80%, transparent 10%, var(--accent) 11%, transparent 12%),
+                repeating-linear-gradient(45deg, transparent, transparent 10px, var(--text-dim) 10px, var(--text-dim) 11px);
+            background-size: 100% 100%, 100% 100%, 60px 60px;
+            animation: bgDrift 60s linear infinite;
+        }
+
+        @keyframes bgDrift {
+            0% { background-position: 0% 0%, 0% 0%, 0 0; }
+            100% { background-position: 10% 10%, -10% -10%, 60px 60px; }
+        }
+
+        /* --- 3. 導航列 (Navigation) --- */
+        nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px 5%;
+            backdrop-filter: blur(10px);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.1);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 800;
+            letter-spacing: -1px;
+            color: var(--text-main);
+        }
+        .logo span { color: var(--primary); }
+
+        .nav-links button {
+            background: transparent;
+            border: 1px solid var(--primary);
+            color: var(--primary);
+            padding: 8px 16px;
+            border-radius: 20px;
+            cursor: pointer;
+            transition: 0.3s;
+            font-weight: bold;
+        }
+        .nav-links button:hover {
+            background: var(--primary);
+            color: var(--bg-deep);
+            box-shadow: 0 0 15px var(--primary);
+        }
+
+        /* --- 4. 英雄區塊 (Hero Section) --- */
+        header.hero {
+            height: 90vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        h1 {
+            font-size: clamp(3rem, 8vw, 6rem);
+            font-weight: 900;
+            background: linear-gradient(135deg, var(--text-main) 0%, var(--primary) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 20px rgba(56, 189, 248, 0.3));
+        }
+
+        p.subtitle {
+            font-size: 1.25rem;
+            color: var(--text-dim);
+            max-width: 600px;
+            margin-bottom: 40px;
+        }
+
+        /* 互動式地球球體 CSS 繪製 */
+        .globe-container {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            background: radial-gradient(circle at 30% 30%, var(--primary), var(--bg-deep));
+            box-shadow: 0 0 50px -10px var(--primary);
+            margin-bottom: 40px;
+            position: relative;
+            overflow: hidden;
+            animation: float 6s ease-in-out infinite;
+        }
+
+        .globe-grid {
+            position: absolute;
+            top: 0; left: 0; right: 0; bottom: 0;
+            background: 
+                repeating-linear-gradient(transparent 0, transparent 19px, rgba(255,255,255,0.1) 20px),
+                repeating-linear-gradient(90deg, transparent 0, transparent 19px, rgba(255,255,255,0.1) 20px);
+            border-radius: 50%;
+            transform: rotate(23.5deg);
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-20px); }
+        }
+
+        /* --- 5. 功能展示區 (Split Layout) --- */
+        section.demo {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 40px;
+            padding: 100px 5%;
+            align-items: center;
+        }
+
+        @media (max-width: 768px) {
+            section.demo { grid-template-columns: 1fr; }
+        }
+
+        /* 程式碼終端機樣式 */
+        .terminal-window {
+            background: var(--code-bg);
+            border-radius: var(--card-radius);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+            font-family: var(--font-mono);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+            position: relative;
+        }
+
+        .terminal-header {
+            background: rgba(255,255,255,0.05);
+            padding: 10px 15px;
+            display: flex;
+            gap: 8px;
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #ff5f56; }
+        .dot:nth-child(2) { background: #ffbd2e; }
+        .dot:nth-child(3) { background: #27c93f; }
+
+        .terminal-body {
+            padding: 20px;
+            color: #a5d6ff;
+            min-height: 250px;
+            font-size: 0.9rem;
+        }
+        
+        .cursor {
+            display: inline-block;
+            width: 8px;
+            height: 18px;
+            background: var(--accent);
+            animation: blink 1s infinite;
+            vertical-align: middle;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
+
+        /* 3D 傾斜地圖卡片 */
+        .map-card {
+            perspective: 1000px;
+            display: flex;
+            justify-content: center;
+        }
+        
+        .map-visual {
+            width: 100%;
+            max-width: 500px;
+            height: 350px;
+            background: linear-gradient(135deg, #1e293b, #0f172a);
+            border-radius: var(--card-radius);
+            border: 2px solid var(--primary);
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 0.1s ease-out; /* 即時跟隨 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 0 30px rgba(56, 189, 248, 0.1);
+        }
+
+        /* 用 CSS 模擬地圖內容 */
+        .mock-map {
+            width: 80%;
+            height: 80%;
+            background: 
+                radial-gradient(circle at 50% 50%, var(--accent), transparent 60%),
+                repeating-conic-gradient(#1e293b 0% 25%, transparent 0% 50%) 
+                50% / 20px 20px;
+            opacity: 0.8;
+            border-radius: 8px;
+            transform: translateZ(40px); /* 讓內容浮起來 */
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+        }
+
+        /* --- 6. 特色網格 (Features) --- */
+        section.features {
+            padding: 100px 5%;
+            text-align: center;
+        }
+        
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            margin-top: 50px;
+        }
+
+        .feature-item {
+            background: rgba(255,255,255,0.03);
+            padding: 30px;
+            border-radius: var(--card-radius);
+            transition: 0.3s;
+            border: 1px solid transparent;
+        }
+
+        .feature-item:hover {
+            transform: translateY(-10px);
+            border-color: var(--accent);
+            background: rgba(255,255,255,0.05);
+        }
+
+        .icon {
+            font-size: 2rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        /* --- 7. Call to Action & Footer --- */
+        .cta-section {
+            padding: 100px 20px;
+            text-align: center;
+            background: linear-gradient(to top, var(--bg-deep), transparent);
+        }
+
+        .btn-main {
+            display: inline-block;
+            background: var(--primary);
+            color: var(--bg-deep);
+            padding: 15px 40px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            text-decoration: none;
+            border-radius: 50px;
+            transition: 0.3s;
+            box-shadow: 0 0 20px var(--primary);
+        }
+        .btn-main:hover {
+            transform: scale(1.05);
+            background: #fff;
+            box-shadow: 0 0 40px #fff;
+        }
+
+        footer {
+            padding: 40px;
+            text-align: center;
+            color: var(--text-dim);
+            font-size: 0.9rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+        }
+
+        /* Utility: Highlight text */
+        .hl { color: var(--accent); }
+
+    </style>
+</head>
+<body>
+
+    <div class="contour-bg"></div>
+
+    <nav>
+        <div class="logo">Py<span>GMT</span></div>
+        <div class="nav-links">
+            <button id="themeToggle" onclick="toggleTheme()">切換 Colormap</button>
+        </div>
+    </nav>
+
+    <header class="hero">
+        <div class="globe-container">
+            <div class="globe-grid"></div>
+        </div>
+        <h1>Map the World<br>Python Style</h1>
+        <p class="subtitle">
+            不僅僅是繪圖，而是數據的<span class="hl">空間敘事</span>。
+            <br>為科學家、探險家與數據愛好者打造的現代繪圖工具。
+        </p>
+    </header>
+
+    <section class="demo">
+        <div class="terminal-window">
+            <div class="terminal-header">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+            </div>
+            <div class="terminal-body" id="typewriter">
+                <span class="cursor"></span>
+            </div>
+        </div>
+
+        <div class="map-card" id="mapCard">
+            <div class="map-visual">
+                <div class="mock-map"></div>
+                <div style="position: absolute; bottom: 20px; left: 20px; color: white; font-weight: bold; font-family: sans-serif;">
+                    FIG. 01 <span style="font-size: 0.8em; opacity: 0.7">Global Relief</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section class="features">
+        <h2 style="font-size: 2.5rem; margin-bottom: 20px;">為何選擇 <span style="color:var(--primary)">PyGMT</span>?</h2>
+        <div class="feature-grid">
+            <div class="feature-item">
+                <span class="icon">🐼</span>
+                <h3>Pandas 友善</h3>
+                <p>無縫整合 DataFrame。將您的數據直接轉化為地圖，無需繁瑣的格式轉換。</p>
+            </div>
+            <div class="feature-item">
+                <span class="icon">🌍</span>
+                <h3>投影大師</h3>
+                <p>支援超過 30 種地圖投影。從 Mercator 到 Orthographic，隨心所欲。</p>
+            </div>
+            <div class="feature-item">
+                <span class="icon">🎨</span>
+                <h3>學術級美學</h3>
+                <p>內建科學色彩配置 (Colormaps) 與高品質向量輸出 (PDF, SVG)。</p>
+            </div>
+        </div>
+    </section>
+
+    <div class="cta-section">
+        <h2 style="margin-bottom: 30px;">準備好開始探險了嗎？</h2>
+        <a href="https://www.pygmt.org/" target="_blank" class="btn-main">查看官方文檔 ➜</a>
+    </div>
+
+    <footer>
+        <p>Design Concept for PyGMT Users | Created by Gemini</p>
+        <p style="margin-top: 10px; opacity: 0.5;">conda install pygmt</p>
+    </footer>
+
+    <script>
+        // 1. 自動打字機效果 (Typewriter Effect)
+        const codeText = [
+            "import pygmt",
+            "",
+            "# Create a new instance",
+            "fig = pygmt.Figure()",
+            "",
+            "# Plot coastlines",
+            "fig.coast(",
+            "    region='g',",
+            "    projection='G-30/20/12c',",
+            "    land='lightgray',",
+            "    water='skyblue'",
+            ")",
+            "",
+            "fig.show()"
+        ];
+
+        const typeWriterElement = document.getElementById('typewriter');
+        let lineIndex = 0;
+        let charIndex = 0;
+
+        function typeCode() {
+            if (lineIndex < codeText.length) {
+                const currentLine = codeText[lineIndex];
+                
+                // 處理換行
+                if (charIndex === 0) {
+                    const lineDiv = document.createElement('div');
+                    lineDiv.id = `line-${lineIndex}`;
+                    // 簡單的高亮邏輯
+                    if (currentLine.startsWith('#')) {
+                        lineDiv.style.color = '#6a737d'; // Comment color
+                    } else if (currentLine.includes('import') || currentLine.includes('fig.')) {
+                        lineDiv.style.color = 'var(--accent)';
+                    }
+                    typeWriterElement.insertBefore(lineDiv, typeWriterElement.lastElementChild);
+                }
+
+                const currentLineDiv = document.getElementById(`line-${lineIndex}`);
+                
+                if (charIndex < currentLine.length) {
+                    currentLineDiv.textContent += currentLine.charAt(charIndex);
+                    charIndex++;
+                    setTimeout(typeCode, Math.random() * 30 + 20); // 隨機打字速度
+                } else {
+                    lineIndex++;
+                    charIndex = 0;
+                    setTimeout(typeCode, 100); // 換行停頓
+                }
+            }
+        }
+
+        // 啟動打字機
+        setTimeout(typeCode, 1000);
+
+        // 2. 3D 卡片傾斜效果 (3D Tilt Effect)
+        const mapCard = document.getElementById('mapCard');
+        const mapVisual = mapCard.querySelector('.map-visual');
+
+        mapCard.addEventListener('mousemove', (e) => {
+            const rect = mapCard.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+            
+            const centerX = rect.width / 2;
+            const centerY = rect.height / 2;
+            
+            const rotateX = ((y - centerY) / centerY) * -10; // Max 10deg
+            const rotateY = ((x - centerX) / centerX) * 10;
+
+            mapVisual.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+        });
+
+        mapCard.addEventListener('mouseleave', () => {
+            mapVisual.style.transform = `rotateX(0) rotateY(0)`;
+        });
+
+        // 3. 主題切換 (Theme Toggler)
+        function toggleTheme() {
+            document.body.classList.toggle('theme-magma');
+            const btn = document.getElementById('themeToggle');
+            if (document.body.classList.contains('theme-magma')) {
+                btn.textContent = "切換回 Deep Blue";
+            } else {
+                btn.textContent = "切換 Colormap";
+            }
+        }
+    </script>
+</body>
+</html>
