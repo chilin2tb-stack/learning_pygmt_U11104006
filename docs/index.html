@@ -3,367 +3,406 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PyGMT: AGU 2021 實戰展示</title>
+    <title>PyGMT: 現代地球科學繪圖</title>
     <style>
-        /* --- 1. 核心變數 (Design Tokens) --- */
+        /* --- 1. Design Tokens (設計變數) --- */
         :root {
-            --bg-deep: #0f172a;
-            --primary: #38bdf8;    /* Ocean Blue */
-            --accent: #f472b6;     /* Magma Pink */
-            --code-bg: #1e1e1e;
-            --text-main: #f8fafc;
-            --text-dim: #94a3b8;
-            --card-radius: 16px;
+            --bg-deep: #0b1121;       /* 深海黑藍 */
+            --bg-card: #151e32;       /* 卡片背景 */
+            --primary: #38bdf8;       /* 海洋藍 */
+            --accent: #f43f5e;        /* 熱圖紅/粉 */
+            --code-bg: #0f172a;       /* 代碼區塊背景 */
+            --text-main: #f1f5f9;     /* 主要文字 */
+            --text-dim: #94a3b8;      /* 次要文字 */
             --font-display: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
             --font-mono: 'Fira Code', 'Consolas', monospace;
-        }
-
-        body.theme-magma {
-            --bg-deep: #1a0b2e;
-            --primary: #fbbf24;
-            --accent: #a855f7;
+            --card-radius: 16px;
         }
 
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        
+
         body {
             background-color: var(--bg-deep);
             color: var(--text-main);
             font-family: var(--font-display);
             line-height: 1.6;
-            transition: background 0.5s ease;
             overflow-x: hidden;
         }
 
-        /* --- 2. 背景特效 (Contour Animation) --- */
+        /* --- 2. 背景動態等高線 (Contour Animation) --- */
         .contour-bg {
             position: fixed;
             top: 0; left: 0; width: 100%; height: 100%;
             z-index: -1;
-            opacity: 0.15;
-            background-image: 
-                radial-gradient(circle at 10% 20%, transparent 10%, var(--primary) 11%, transparent 12%),
-                repeating-linear-gradient(45deg, transparent, transparent 20px, var(--text-dim) 20px, var(--text-dim) 21px);
-            background-size: 100% 100%, 80px 80px;
-            animation: bgMove 120s linear infinite;
+            opacity: 0.08;
+            background: 
+                radial-gradient(circle at 15% 50%, var(--primary), transparent 25%),
+                radial-gradient(circle at 85% 30%, var(--accent), transparent 25%);
+            filter: blur(60px);
+            animation: pulse 10s ease-in-out infinite alternate;
         }
-        @keyframes bgMove { 0% { background-position: 0 0; } 100% { background-position: 80px 80px; } }
+        
+        /* 網格紋理 */
+        .grid-overlay {
+            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+            z-index: -1;
+            background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+            background-size: 40px 40px;
+            mask-image: radial-gradient(circle, black 40%, transparent 100%);
+        }
 
-        /* --- 3. UI 元件 --- */
+        @keyframes pulse {
+            0% { opacity: 0.08; transform: scale(1); }
+            100% { opacity: 0.12; transform: scale(1.1); }
+        }
+
+        /* --- 3. 導航與 Header --- */
         nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
             padding: 20px 5%;
-            position: sticky;
-            top: 0;
+            display: flex; justify-content: space-between; align-items: center;
             backdrop-filter: blur(10px);
-            z-index: 100;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            position: sticky; top: 0; z-index: 100;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
         }
-        .logo { font-size: 1.5rem; font-weight: 800; color: var(--text-main); }
+        .logo { font-size: 1.5rem; font-weight: 800; letter-spacing: -0.5px; }
         .logo span { color: var(--primary); }
-        .badge { background: var(--accent); color: white; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; vertical-align: middle; margin-left: 10px;}
-
-        /* --- 4. Hero Section --- */
-        header {
-            padding: 80px 5%;
+        
+        header.hero {
             text-align: center;
+            padding: 80px 20px;
+            position: relative;
         }
         h1 {
             font-size: clamp(2.5rem, 6vw, 5rem);
-            font-weight: 900;
-            background: linear-gradient(to right, var(--text-main), var(--primary));
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #fff 0%, var(--primary) 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
-            margin-bottom: 20px;
+            text-shadow: 0 0 30px rgba(56, 189, 248, 0.3);
         }
-        p.subtitle {
-            font-size: 1.2rem;
-            color: var(--text-dim);
-            max-width: 700px;
-            margin: 0 auto 50px;
-        }
+        p.subtitle { font-size: 1.25rem; color: var(--text-dim); max-width: 600px; margin: 0 auto; }
 
-        /* --- 5. 實戰演示區 (Demo Section) --- */
-        .demo-container {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 50px;
-            padding: 0 5% 100px;
-            align-items: center;
+        /* --- 4. 影片分析區塊 (AGU 2021 Analysis) --- */
+        section.analysis {
+            padding: 60px 5%;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        @media (max-width: 900px) { .demo-container { grid-template-columns: 1fr; } }
-
-        /* 左側：程式碼 */
-        .code-window {
-            background: var(--code-bg);
-            border-radius: var(--card-radius);
-            padding: 20px;
-            box-shadow: 0 20px 50px rgba(0,0,0,0.5);
-            font-family: var(--font-mono);
-            border: 1px solid rgba(255,255,255,0.1);
-            min-height: 350px;
-            position: relative;
-        }
-        .code-header {
-            display: flex; gap: 8px; margin-bottom: 15px; opacity: 0.7;
-        }
-        .dot { width: 12px; height: 12px; border-radius: 50%; background: #555; }
-        .dot.r { background: #ff5f56; } .dot.y { background: #ffbd2e; } .dot.g { background: #27c93f; }
         
-        .code-content { color: #d4d4d4; font-size: 0.9rem; white-space: pre-wrap; }
-        .kw { color: #c586c0; } /* Keyword */
-        .fn { color: #dcdcaa; } /* Function */
-        .str { color: #ce9178; } /* String */
-        .arg { color: #9cdcfe; } /* Argument */
-        .cursor { display: inline-block; width: 8px; height: 1.2em; background: var(--primary); animation: blink 1s infinite; vertical-align: text-bottom; }
-        @keyframes blink { 50% { opacity: 0; } }
-
-        /* 右側：3D 地圖 (Hammer Projection) */
-        .map-stage {
-            perspective: 1000px;
+        .section-title {
+            font-size: 2rem;
+            margin-bottom: 40px;
+            border-left: 5px solid var(--accent);
+            padding-left: 20px;
             display: flex;
-            justify-content: center;
+            align-items: center;
+            gap: 15px;
         }
-        .map-card {
-            width: 100%; max-width: 500px; height: 320px;
-            background: radial-gradient(circle at 50% 50%, #1e293b, #0f172a);
-            border: 1px solid var(--text-dim);
+        .tag {
+            background: rgba(244, 63, 94, 0.2);
+            color: var(--accent);
+            font-size: 0.8rem;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-weight: bold;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .info-card {
+            background: var(--bg-card);
+            padding: 30px;
             border-radius: var(--card-radius);
-            position: relative;
-            transform-style: preserve-3d;
-            transition: transform 0.1s;
-            display: flex; flex-direction: column;
-            align-items: center; justify-content: center;
-            box-shadow: 0 0 30px rgba(56, 189, 248, 0.15);
-        }
-        
-        /* 模擬 Hammer 投影的橢圓外觀 */
-        .hammer-projection {
-            width: 90%; height: 70%;
-            border-radius: 50% / 50%; /* 橢圓 */
-            background: 
-                radial-gradient(circle at 30% 30%, var(--accent), transparent 50%),
-                conic-gradient(from 0deg, var(--bg-deep), var(--primary), var(--bg-deep));
-            border: 2px solid var(--text-dim);
+            border: 1px solid rgba(255,255,255,0.05);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
             position: relative;
             overflow: hidden;
-            box-shadow: inset 0 0 20px #000;
-        }
-        .hammer-grid {
-            position: absolute; inset: 0;
-            background: repeating-linear-gradient(transparent 0, transparent 19px, rgba(255,255,255,0.2) 20px),
-                        repeating-linear-gradient(90deg, transparent 0, transparent 39px, rgba(255,255,255,0.2) 40px);
-            opacity: 0.3;
-        }
-        .map-label {
-            margin-top: 15px;
-            font-size: 0.8rem;
-            color: var(--primary);
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            font-weight: bold;
         }
 
-        /* --- 6. 教學摘要 (Tutorial Insights) --- */
-        section.insights {
+        .info-card::before {
+            content: '';
+            position: absolute; top: 0; left: 0; width: 4px; height: 100%;
+            background: var(--primary);
+            opacity: 0.5;
+        }
+        
+        .info-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+            border-color: var(--primary);
+        }
+
+        .info-card h3 { margin-bottom: 15px; color: var(--text-main); font-size: 1.4rem; }
+        .info-card p { color: var(--text-dim); font-size: 0.95rem; margin-bottom: 15px; }
+        .code-snippet {
+            background: rgba(0,0,0,0.3);
+            padding: 10px;
+            border-radius: 8px;
+            font-family: var(--font-mono);
+            font-size: 0.85rem;
+            color: #a5b4fc;
+            border-left: 2px solid var(--accent);
+        }
+
+        /* --- 5. 成果展示區 (Specific Plot) --- */
+        section.showcase {
+            margin-top: 80px;
             padding: 80px 5%;
-            background: rgba(255,255,255,0.02);
-        }
-        .steps-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 30px;
-            margin-top: 40px;
-        }
-        .step-card {
-            background: rgba(255,255,255,0.05);
-            padding: 25px;
-            border-radius: 12px;
-            border-left: 4px solid var(--primary);
-            transition: 0.3s;
-        }
-        .step-card:hover { transform: translateY(-5px); background: rgba(255,255,255,0.08); }
-        .step-card h3 { margin-bottom: 10px; color: var(--text-main); }
-        .step-card code { background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 4px; font-family: var(--font-mono); color: var(--accent); }
-
-        /* --- 7. Footer --- */
-        footer {
-            text-align: center;
-            padding: 50px;
-            color: var(--text-dim);
-            font-size: 0.9rem;
+            background: linear-gradient(to bottom, var(--bg-deep), #0f1525);
             border-top: 1px solid rgba(255,255,255,0.05);
         }
-        .btn {
-            display: inline-block;
-            margin-top: 20px;
-            padding: 10px 25px;
-            background: var(--primary);
-            color: var(--bg-deep);
-            border-radius: 50px;
-            text-decoration: none;
-            font-weight: bold;
-            transition: 0.3s;
+
+        .showcase-container {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            justify-content: center;
+            gap: 50px;
+            max-width: 1200px;
+            margin: 0 auto;
         }
-        .btn:hover { box-shadow: 0 0 20px var(--primary); transform: scale(1.05); }
+
+        /* 左側：代碼 */
+        .code-window {
+            flex: 1;
+            min-width: 300px;
+            background: var(--code-bg);
+            border-radius: var(--card-radius);
+            box-shadow: 0 20px 50px rgba(0,0,0,0.6);
+            overflow: hidden;
+            border: 1px solid rgba(255,255,255,0.1);
+        }
+        .window-header {
+            background: rgba(255,255,255,0.05);
+            padding: 12px 20px;
+            display: flex; gap: 8px;
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        .dot { width: 12px; height: 12px; border-radius: 50%; background: #555; }
+        .dot.red { background: #ef4444; } .dot.yellow { background: #eab308; } .dot.green { background: #22c55e; }
+
+        .window-body {
+            padding: 25px;
+            font-family: var(--font-mono);
+            font-size: 0.95rem;
+            color: #e2e8f0;
+            white-space: pre-wrap;
+            position: relative;
+        }
+        .keyword { color: #c084fc; } /* import, def */
+        .func { color: #60a5fa; } /* function call */
+        .string { color: #f472b6; } /* strings */
+        .obj { color: #2dd4bf; } /* objects */
+
+        /* 右側：圖片 */
+        .image-frame {
+            flex: 1.2;
+            min-width: 300px;
+            position: relative;
+            display: flex;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .image-wrapper {
+            position: relative;
+            padding: 10px;
+            background: rgba(255,255,255,0.05);
+            border-radius: var(--card-radius);
+            backdrop-filter: blur(5px);
+            border: 1px solid rgba(255,255,255,0.1);
+            box-shadow: 0 0 50px rgba(56, 189, 248, 0.1);
+            transition: transform 0.5s cubic-bezier(0.23, 1, 0.32, 1);
+        }
+        
+        .image-wrapper:hover {
+            transform: rotateY(-5deg) rotateX(5deg);
+            box-shadow: 0 20px 60px rgba(56, 189, 248, 0.2);
+        }
+
+        .image-wrapper img {
+            width: 100%;
+            height: auto;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .caption {
+            margin-top: 15px;
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--text-dim);
+            font-family: var(--font-mono);
+        }
+
+        /* --- 6. Footer --- */
+        footer {
+            text-align: center;
+            padding: 40px;
+            color: var(--text-dim);
+            font-size: 0.8rem;
+            border-top: 1px solid rgba(255,255,255,0.05);
+            margin-top: 50px;
+        }
+
+        /* 打字機游標 */
+        .cursor {
+            display: inline-block;
+            width: 8px; height: 1.2em;
+            background: var(--accent);
+            vertical-align: text-bottom;
+            animation: blink 1s infinite;
+        }
+        @keyframes blink { 50% { opacity: 0; } }
 
     </style>
 </head>
 <body>
 
     <div class="contour-bg"></div>
+    <div class="grid-overlay"></div>
 
     <nav>
-        <div class="logo">Py<span>GMT</span> <span class="badge">AGU 2021 Edition</span></div>
-        <button onclick="document.body.classList.toggle('theme-magma')" style="background:transparent; border:1px solid var(--primary); color:var(--primary); padding:5px 15px; border-radius:20px; cursor:pointer;">
-            切換主題
-        </button>
+        <div class="logo">Py<span>GMT</span> Explorer</div>
+        <div style="font-family: var(--font-mono); font-size: 0.8rem; color: var(--text-dim);">v0.12.0</div>
     </nav>
 
-    <header>
-        <h1>Quick Introduction to<br>Plotting with PyGMT</h1>
+    <header class="hero">
+        <h1>Beautiful Maps,<br>Simple Code.</h1>
         <p class="subtitle">
-            基於 AGU 2021 演講內容分析。<br>
-            從零開始：創建 <code>Figure</code>，設定 <code>BaseMap</code>，並透過 <code>Remote Datasets</code> 繪製地形。
+            結合 Python 的強大與 GMT 的精準，為地球科學數據賦予全新的視覺生命。
         </p>
     </header>
 
-    <div class="demo-container">
-        <div class="code-window">
-            <div class="code-header">
-                <div class="dot r"></div><div class="dot y"></div><div class="dot g"></div>
-            </div>
-            <div class="code-content" id="typewriter"></div>
+    <section class="analysis">
+        <div class="section-title">
+            AGU 2021 Highlights
+            <span class="tag">Video Analysis</span>
         </div>
-
-        <div class="map-stage">
-            <div class="map-card" id="tiltCard">
-                <div class="hammer-projection">
-                    <div class="hammer-grid"></div>
-                </div>
-                <div class="map-label">FIG 3. Earth Relief (Hammer)</div>
-            </div>
-        </div>
-    </div>
-
-    <section class="insights">
-        <h2 style="text-align:center; font-size:2rem;">影片教學核心流程</h2>
-        <div class="steps-grid">
-            <div class="step-card">
+        
+        <div class="cards-grid">
+            <div class="info-card">
                 <h3>1. The Canvas</h3>
-                <p>一切從 <code>fig = pygmt.Figure()</code> 開始。這是 PyGMT 繪圖的核心物件，類似於畫布的概念。</p>
+                <p>一切始於 <code>Figure()</code>。這不僅是一個畫布，更是一個管理所有繪圖層級的容器。</p>
+                <div class="code-snippet">fig = pygmt.Figure()</div>
             </div>
-            <div class="step-card">
-                <h3>2. Basemap & Projection</h3>
-                <p>使用 <code>fig.basemap()</code> 設定地圖邊框。影片示範了從 Mercator (<code>M</code>) 到 Hammer (<code>H</code>) 投影的轉換。參數 <code>region='g'</code> 代表全球數據。</p>
+
+            <div class="info-card">
+                <h3>2. The Projection</h3>
+                <p>影片展示了如何輕鬆切換投影。從 Mercator 到 Hammer，只需更改參數代碼即可改變觀察世界的視角。</p>
+                <div class="code-snippet">projection="H15c" <span style="color:#666"># Hammer</span></div>
             </div>
-            <div class="step-card">
+
+            <div class="info-card">
                 <h3>3. Remote Data</h3>
-                <p>最強大的功能：<code>fig.grdimage()</code>。只需輸入 <code>@earth_relief_20m</code>，PyGMT 會自動從伺服器下載地形數據並繪製，無需手動處理檔案。</p>
+                <p>最強大的功能之一：自動存取遠端數據集。無需下載龐大的地形檔，PyGMT 會在背景自動處理。</p>
+                <div class="code-snippet">grid="@earth_relief_15m"</div>
             </div>
         </div>
-        <div style="text-align: center;">
-            <a href="https://www.youtube.com/watch?v=Kb6TYvZcI_c" target="_blank" class="btn">觀看完整影片教學 ➜</a>
+    </section>
+
+    <section class="showcase">
+        <div class="section-title" style="justify-content: center; border: none;">
+            Winkel Tripel Projection
+            <span class="tag" style="background: rgba(56, 189, 248, 0.2); color: var(--primary);">Code Showcase</span>
+        </div>
+
+        <div class="showcase-container">
+            
+            <div class="code-window">
+                <div class="window-header">
+                    <div class="dot red"></div>
+                    <div class="dot yellow"></div>
+                    <div class="dot green"></div>
+                    <span style="margin-left: 10px; font-size: 0.8rem; color: #666;">script.py</span>
+                </div>
+                <div class="window-body" id="typewriter">
+                    </div>
+            </div>
+
+            <div class="image-frame">
+                <div class="image-wrapper">
+                    <img src="assert/fig1.png" alt="PyGMT Output: Winkel Tripel Projection">
+                </div>
+                <div class="caption">
+                    FIG 1. Global Relief (Winkel Tripel)<br>
+                    <span style="color: var(--accent)">R12c Projection</span>
+                </div>
+            </div>
+
         </div>
     </section>
 
     <footer>
-        <p>Tutorial Content based on "Quick Introduction to Plotting with PyGMT - AGU 2021"</p>
-        <p style="opacity:0.5; margin-top:10px;">Visualization by Gemini</p>
+        <p>Created for PyGMT Enthusiasts.</p>
+        <p>Image Source: User Upload (assert/fig1.png) | Video Source: AGU 2021 Tutorial</p>
     </footer>
 
     <script>
-        // 1. 根據 AGU 影片內容的程式碼腳本
-        // 影片 04:00 處演示的 grdimage + remote dataset
-        const codeLines = [
-            { text: "import pygmt", type: "imp" },
-            { text: "", type: "txt" },
-            { text: "# Initialize the Figure", type: "com" },
-            { text: "fig = pygmt.Figure()", type: "code" },
-            { text: "", type: "txt" },
-            { text: "# Setup Hammer projection (Global)", type: "com" },
-            { text: "fig.basemap(", type: "fn" },
-            { text: "    region='g',      # Global coverage", type: "arg" },
-            { text: "    projection='H20c', # Hammer, 20cm", type: "arg" },
-            { text: "    frame=True", type: "arg" },
-            { text: ")", type: "fn" },
-            { text: "", type: "txt" },
-            { text: "# Plot SRTM15+ Earth Relief", type: "com" },
-            { text: "fig.grdimage(", type: "fn" },
-            { text: "    grid='@earth_relief_20m',", type: "str" },
-            { text: "    shading=True", type: "arg" },
-            { text: ")", type: "fn" },
-            { text: "", type: "txt" },
-            { text: "fig.show()", type: "fn" }
+        // 設定要顯示的程式碼內容
+        const codeContent = [
+            { text: "import", class: "keyword" }, { text: " pygmt\n\n", class: "text" },
+            { text: "# 1. Create the Figure instance\n", class: "text", style: "opacity:0.5" },
+            { text: "fig", class: "obj" }, { text: " = pygmt.", class: "text" }, { text: "Figure", class: "func" }, { text: "()\n\n", class: "text" },
+            
+            { text: "# 2. Plot grid with Winkel Tripel projection\n", class: "text", style: "opacity:0.5" },
+            { text: "fig", class: "obj" }, { text: ".", class: "text" }, { text: "grdimage", class: "func" }, { text: "(\n", class: "text" },
+            { text: "    grid", class: "obj" }, { text: "=", class: "text" }, { text: "grid", class: "obj" }, { text: ",  ", class: "text" }, { text: "# e.g., '@earth_relief'\n", class: "text", style: "color:#6a9955" },
+            { text: "    projection", class: "obj" }, { text: "=", class: "text" }, { text: "\"R12c\"", class: "string" }, { text: "\n)\n\n", class: "text" },
+            
+            { text: "# 3. Display the result\n", class: "text", style: "opacity:0.5" },
+            { text: "fig", class: "obj" }, { text: ".", class: "text" }, { text: "show", class: "func" }, { text: "()", class: "text" }
         ];
 
-        const typeWriterEl = document.getElementById('typewriter');
-        let lineIdx = 0;
-        let charIdx = 0;
+        const typeWriterElement = document.getElementById('typewriter');
+        let index = 0;
 
-        function typeLoop() {
-            if (lineIdx < codeLines.length) {
-                // 如果是新的一行，先創建 div
-                let lineDiv = document.getElementById(`L${lineIdx}`);
-                if (!lineDiv) {
-                    lineDiv = document.createElement('div');
-                    lineDiv.id = `L${lineIdx}`;
-                    // 根據類型給予簡單的顏色樣式
-                    const type = codeLines[lineIdx].type;
-                    if (type === 'com') lineDiv.style.color = '#6a9955';
-                    if (type === 'str') lineDiv.style.color = '#ce9178';
-                    typeWriterEl.insertBefore(lineDiv, document.querySelector('.cursor'));
-                }
-
-                const fullText = codeLines[lineIdx].text;
-                if (charIdx < fullText.length) {
-                    lineDiv.textContent += fullText.charAt(charIdx);
-                    charIdx++;
-                    setTimeout(typeLoop, Math.random() * 20 + 10);
+        function typeCode() {
+            if (index < codeContent.length) {
+                const item = codeContent[index];
+                const span = document.createElement('span');
+                span.className = item.class;
+                span.innerText = item.text;
+                if (item.style) span.style = item.style;
+                
+                // 插入在游標之前
+                const cursor = document.querySelector('.cursor');
+                if (cursor) {
+                    typeWriterElement.insertBefore(span, cursor);
                 } else {
-                    lineIdx++;
-                    charIdx = 0;
-                    setTimeout(typeLoop, 150); // 換行稍微停頓
+                    typeWriterElement.appendChild(span);
+                    // 重新加入游標
+                    const newCursor = document.createElement('span');
+                    newCursor.className = 'cursor';
+                    typeWriterElement.appendChild(newCursor);
                 }
-            } else {
-                // 結束後顯示游標閃爍
-                if(!document.querySelector('.cursor')) {
-                   const cursor = document.createElement('span');
-                   cursor.className = 'cursor';
-                   typeWriterEl.appendChild(cursor);
-                }
+
+                index++;
+                // 模擬打字速度變化
+                setTimeout(typeCode, Math.random() * 30 + 20);
             }
         }
+
+        // 初始化游標並開始打字
+        const initCursor = document.createElement('span');
+        initCursor.className = 'cursor';
+        typeWriterElement.appendChild(initCursor);
         
-        // 啟動打字
-        const cursor = document.createElement('span');
-        cursor.className = 'cursor';
-        typeWriterEl.appendChild(cursor);
-        setTimeout(typeLoop, 1000);
+        // 延遲一點開始
+        setTimeout(typeCode, 1000);
 
-
-        // 2. 3D Tilt 互動效果
-        const card = document.getElementById('tiltCard');
-        const container = document.querySelector('.map-stage');
-
-        container.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            const centerX = rect.width / 2;
-            const centerY = rect.height / 2;
+        // 簡單的視差效果 (Parallax)
+        document.addEventListener('mousemove', (e) => {
+            const x = (window.innerWidth - e.pageX * 2) / 100;
+            const y = (window.innerHeight - e.pageY * 2) / 100;
             
-            // 計算旋轉角度
-            const rotateX = ((y - centerY) / centerY) * -15;
-            const rotateY = ((x - centerX) / centerX) * 15;
-
-            card.style.transform = `rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
-        });
-
-        container.addEventListener('mouseleave', () => {
-            card.style.transform = `rotateX(0deg) rotateY(0deg)`;
+            document.querySelector('.contour-bg').style.transform = `translateX(${x}px) translateY(${y}px) scale(1.1)`;
         });
 
     </script>
