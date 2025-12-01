@@ -224,12 +224,57 @@
         }
         .final-image.show { opacity: 1; transform: scale(1); display: block; }
 
+        /* --- 8. Official Docs Section (NEW) --- */
+        section.official-docs {
+            padding: 80px 0 120px;
+            text-align: center;
+        }
+        .docs-banner {
+            background: linear-gradient(135deg, rgba(14, 165, 233, 0.1), rgba(217, 70, 239, 0.05));
+            border: 1px solid rgba(14, 165, 233, 0.2);
+            border-radius: 20px;
+            padding: 60px 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+            position: relative;
+            overflow: hidden;
+            box-shadow: 0 0 50px rgba(0,0,0,0.3);
+        }
+        .docs-banner::before {
+            content: ''; position: absolute; top: -50px; left: -50px; width: 150px; height: 150px;
+            background: var(--primary); filter: blur(80px); opacity: 0.2;
+        }
+        .docs-content h2 { font-size: 2.2rem; margin-bottom: 20px; }
+        .docs-content p { color: var(--text-muted); max-width: 600px; margin: 0 auto 30px; }
+        
+        .docs-features {
+            display: flex; justify-content: center; gap: 20px; flex-wrap: wrap; margin-bottom: 40px;
+        }
+        .doc-tag {
+            background: rgba(255,255,255,0.05); padding: 8px 16px; border-radius: 50px; font-size: 0.9rem;
+            border: 1px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px;
+        }
+
+        .btn-glow {
+            display: inline-block; padding: 16px 40px;
+            background: var(--primary); color: white;
+            font-weight: bold; text-decoration: none; border-radius: 50px;
+            box-shadow: 0 0 20px var(--primary-glow);
+            transition: 0.3s;
+            font-size: 1.1rem;
+        }
+        .btn-glow:hover {
+            background: #38bdf8; box-shadow: 0 0 40px var(--primary-glow); transform: translateY(-3px);
+        }
+
+
         @keyframes spin { to { transform: rotate(360deg); } }
         @keyframes slideUp { from { opacity: 0; transform: translateY(30px); } to { opacity: 1; transform: translateY(0); } }
         @keyframes bounce { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(10px); } }
 
         footer { text-align: center; padding: 60px 0; color: var(--text-muted); font-size: 0.9rem; border-top: 1px solid rgba(255,255,255,0.05); }
-        a { color: var(--primary); text-decoration: none; }
+        a.ref-link { color: var(--primary); text-decoration: none; transition:0.2s;}
+        a.ref-link:hover { color: var(--accent); }
 
     </style>
 </head>
@@ -384,12 +429,37 @@
                 </div>
             </div>
         </section>
+
+        <section class="official-docs">
+            <div class="container">
+                <div class="docs-banner">
+                    <div class="docs-content">
+                        <h2>Start Your Journey with Official Docs</h2>
+                        <p>
+                            PyGMT 擁有非常詳盡的官方文檔。無論您是想尋找特定的繪圖範例、深入了解 API 參數，
+                            或是學習進階的地理運算，這裡都是您最好的起點。
+                        </p>
+                        
+                        <div class="docs-features">
+                            <span class="doc-tag">🎨 Gallery Examples</span>
+                            <span class="doc-tag">📚 Detailed Tutorials</span>
+                            <span class="doc-tag">⚙️ API Reference</span>
+                            <span class="doc-tag">🔧 Install Guide</span>
+                        </div>
+
+                        <a href="https://www.pygmt.org/latest/" target="_blank" class="btn-glow">
+                            Visit pygmt.org ➜
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
         
         <footer>
             <p>Designed with 💙 for PyGMT Learners</p>
             <p style="margin-top:10px; font-size:0.8rem;">
-                Resources: <a href="https://www.pygmt.org" target="_blank">Official Documentation</a> | 
-                <a href="https://www.youtube.com/watch?v=Kb6TYvZcI_c" target="_blank">AGU 2021 Video</a>
+                Resources: <a href="https://www.pygmt.org" target="_blank" class="ref-link">Official Documentation</a> | 
+                <a href="https://www.youtube.com/watch?v=Kb6TYvZcI_c" target="_blank" class="ref-link">AGU 2021 Video</a>
             </p>
         </footer>
 
